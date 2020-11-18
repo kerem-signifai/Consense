@@ -1,6 +1,9 @@
-import AuthenticatedMPI.SignedPayload
+import mpi.AuthenticatedMPI.SignedPayload
 import org.scalatest.matchers.must
 import org.scalatest.wordspec.AnyWordSpec
+import protocol._
+import protocol.impl.DolevStrong
+import simulation.{RandomCorruptInitializer, RandomHonestInitializer, _}
 
 class DolevStrongSpec extends AnyWordSpec with must.Matchers {
 
@@ -8,14 +11,14 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
     "reach consensus with all honest nodes" in {
       val n = 10
       val f = 3
-      val config = SimulatorConfig.builder
+      val config = Config.builder
         .withInitValue(true)
         .withMaxCorruptNodes(f)
         .withHonestNodes(n - f)
         .withRounds(f + 1)
-        .withInitPolicy(RandomHonestInitializer)
+        .withInitPolicy(RandomHonestInitializer(1))
         .withInitValue(true)
-      val result = new Simulator(config.build, DolevStrong).start()
+      val result = new Simulation(config.build, DolevStrong).start()
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe true
     }
@@ -23,17 +26,17 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
     "reach consensus in the presence of arbitrary number of failures (no-op malicious actors)" in {
       val n = 10
       val f = 3
-      val config = SimulatorConfig.builder
+      val config = Config.builder
         .withInitValue(true)
         .withMaxCorruptNodes(f)
         .withHonestNodes(n - f)
         .withRounds(f + 1)
-        .withInitPolicy(RandomCorruptInitializer)
+        .withInitPolicy(RandomCorruptInitializer(1))
         .withInitValue(true)
       1 to f foreach { _ =>
-        config.addCorruptNode { ctx => new NodeBehavior(ctx) {} }
+        config.addCorruptNode { (_, ctx) => new NodeBehavior(ctx) {} }
       }
-      val result = new Simulator(config.build, DolevStrong).start()
+      val result = new Simulation(config.build, DolevStrong).start()
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe true
     }
@@ -45,33 +48,33 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
       // In round f, the aforementioned honest node accepts the malicious message and arrives at an inconsistent state
       val n = 10
       val f = 3
-      val config = SimulatorConfig.builder
+      val config = Config.builder
         .withInitValue(null)
         .withMaxCorruptNodes(f)
         .withHonestNodes(n - f)
         .withRounds(f)
-        .withInitPolicy(RandomCorruptInitializer)
+        .withInitPolicy(RandomCorruptInitializer(1))
       1 to f foreach { _ =>
-        config.addCorruptNode { ctx =>
-          new NodeBehavior(ctx) {
+        config.addCorruptNode { (advCtx, nCtx) =>
+          new NodeBehavior(nCtx) {
             override def init(): Unit = {
-              discovery.honestNodes foreach { send(true, _) }
-              discovery.corruptNodes foreach { send(false, _) }
+              advCtx.discovery.honestNodes foreach { send(true, _) }
+              advCtx.discovery.corruptNodes foreach { send(false, _) }
             }
             override def receive: Receive = {
               case (SignedPayload(value: Boolean, _, wrapper), _) =>
                 if (!value) {
                   if (round == f - 1) {
-                    send(wrapper, discovery.honestNodes.head)
+                    send(wrapper, advCtx.discovery.honestNodes.head)
                   } else {
-                    discovery.corruptNodes foreach { send(wrapper, _) }
+                    advCtx.discovery.corruptNodes foreach { send(wrapper, _) }
                   }
                 }
             }
           }
         }
       }
-      val result = new Simulator(config.build, DolevStrong).start()
+      val result = new Simulation(config.build, DolevStrong).start()
       result.honestSenderProposition mustBe true
       result.honestAgree mustBe false
     }
@@ -84,33 +87,33 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
       // Since we run for f + 1 rounds, a malicious chain of signatures must include at least one honest node which would have properly propagated that value to other honest nodes
       val n = 10
       val f = 3
-      val config = SimulatorConfig.builder
+      val config = Config.builder
         .withInitValue(null)
         .withMaxCorruptNodes(f)
         .withHonestNodes(n - f)
         .withRounds(f + 1)
-        .withInitPolicy(RandomCorruptInitializer)
+        .withInitPolicy(RandomCorruptInitializer(1))
       1 to f foreach { _ =>
-        config.addCorruptNode { ctx =>
-          new NodeBehavior(ctx) {
+        config.addCorruptNode { (advCtx, nCtx) =>
+          new NodeBehavior(nCtx) {
             override def init(): Unit = {
-              discovery.honestNodes foreach { send(true, _) }
-              discovery.corruptNodes foreach { send(false, _) }
+              advCtx.discovery.honestNodes foreach { send(true, _) }
+              advCtx.discovery.corruptNodes foreach { send(false, _) }
             }
             override def receive: Receive = {
               case (SignedPayload(value: Boolean, _, wrapper), _) =>
                 if (!value) {
                   if (round == f - 1) {
-                    send(wrapper, discovery.honestNodes.head)
+                    send(wrapper, advCtx.discovery.honestNodes.head)
                   } else {
-                    discovery.corruptNodes foreach { send(wrapper, _) }
+                    advCtx.discovery.corruptNodes foreach { send(wrapper, _) }
                   }
                 }
             }
           }
         }
       }
-      val result = new Simulator(config.build, DolevStrong).start()
+      val result = new Simulation(config.build, DolevStrong).start()
       result.honestSenderProposition mustBe true
       result.honestAgree mustBe true
     }
