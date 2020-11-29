@@ -9,6 +9,14 @@ var rules = {};
 
 var util = {};
 
+var protocol = {
+  0: [
+  "send(1 -> 2, SignedMessage(1, true))"],
+  1: [
+  "stateChange(2, extr: [true])",
+  "send(2 -> 3, SignedMessage(SignedMessage(1, true), 2)"],
+  };
+  
 $(function() {
 
 var makeElectionAlarm = function(model) {
@@ -101,84 +109,6 @@ var Server = function(id, peers) {
   };
 };
 
-/*rules.startNewElection = function(model, server) {
-  if ((server.state == 'follower' || server.state == 'candidate') &&
-      server.electionAlarm < model.time) {
-    server.electionAlarm = makeElectionAlarm(model);
-    server.term += 1;
-    server.votedFor = server.id;
-    server.state = 'candidate';
-    server.rpcDue      = util.makeMap(server.peers, 0);
-    server.voteGranted = util.makeMap(server.peers, false);
-    server.matchIndex  = util.makeMap(server.peers, 0);
-    server.nextIndex   = util.makeMap(server.peers, 1);
-  }
-};*/
-
-/*rules.sendRequestVote = function(model, server, peer) {
-  if (server.state == 'candidate' &&
-      server.rpcDue[peer] < model.time) {
-    server.rpcDue[peer] = model.time + RPC_TIMEOUT;
-    sendRequest(model, {
-      from: server.id,
-      to: peer,
-      type: 'RequestVote',
-      term: server.term,
-      lastLogTerm: server.log.term(server.log.len()),
-      lastLogIndex: server.log.len()});
-  }
-};*/
-
-/*rules.becomeLeader = function(model, server) {
-  if (server.state == 'candidate' &&
-      util.countTrue(util.mapValues(server.voteGranted)) + 1 > Math.floor(NUM_SERVERS / 2)) {
-    console.log('server ' + server.id + ' is leader in term ' + server.term);
-    server.state = 'leader';
-    server.nextIndex = util.makeMap(server.peers, server.log.len() + 1);
-    server.rpcDue    = util.makeMap(server.peers, model.time);
-  }
-};*/
-
-/*rules.sendAppendEntries = function(model, server, peer) {
-  if (server.state == 'leader' &&
-      (server.nextIndex[peer] < server.log.len() ||
-       server.rpcDue[peer] < model.time)) {
-    server.rpcDue[peer] = model.time + ELECTION_TIMEOUT / 2;
-    var lastIndex = server.nextIndex[peer];
-    if (lastIndex > server.log.len())
-      lastIndex -= 1;
-    server.nextIndex[peer] = lastIndex;
-    sendRequest(model, {
-      from: server.id,
-      to: peer,
-      type: 'AppendEntries',
-      term: server.term,
-      prevIndex: server.nextIndex[peer] - 1,
-      prevTerm: server.log.term(server.nextIndex[peer] - 1),
-      entries: server.log.slice(server.nextIndex[peer], lastIndex + 1),
-      commitIndex: Math.min(server.commitIndex, lastIndex)});
-  }
-};*/
-
-/*rules.advanceCommitIndex = function(model, server) {
-  var matchIndexes = util.mapValues(server.matchIndex).concat(server.log.len());
-  matchIndexes.sort();
-  var n = matchIndexes[Math.floor(NUM_SERVERS / 2)];
-  if (server.state == 'leader' &&
-      server.log.term(n) == server.term) {
-    server.commitIndex = n;
-  }
-}*/
-
-/*var stepDown = function(model, server, term) {
-  server.term = term;
-  server.state = 'follower';
-  server.votedFor = null;
-  if (server.electionAlarm < model.time) {
-    server.electionAlarm = makeElectionAlarm(model);
-  }
-};*/
-
 var sendMessage = function(model, message) {
   message.sendTime = model.time;
   message.recvTime = model.time + RPC_LATENCY;
@@ -197,95 +127,6 @@ var sendReply = function(model, request, reply) {
   reply.direction = 'reply';
   sendMessage(model, reply);
 };
-
-/*var handleRequestVoteRequest = function(model, server, request) {
-  if (server.term < request.term)
-    stepDown(model, server, request.term);
-  var granted = false;
-  if (server.term == request.term &&
-      (server.votedFor == null ||
-       server.votedFor == request.from) &&
-      (request.lastLogTerm > server.log.term(server.log.len()) ||
-       (request.lastLogTerm == server.log.term(server.log.len()) &&
-        request.lastLogIndex >= server.log.len()))) {
-    granted = true;
-    server.votedFor = request.from;
-    server.electionAlarm = makeElectionAlarm(model);
-  }
-  sendReply(model, request, {
-    term: server.term,
-    granted: granted,
-  });
-};*/
-
-/*var handleRequestVoteReply = function(model, server, reply) {
-  if (server.term < reply.term)
-    stepDown(reply.term);
-  if (server.state == 'candidate' &&
-      server.term == reply.term) {
-    server.rpcDue[reply.from] = Infinity;
-    server.voteGranted[reply.from] = reply.granted;
-  }
-}*/
-
-/*var handleAppendEntriesRequest = function(model, server, request) {
-  var success = false;
-  var matchIndex = 0;
-  if (server.term < request.term)
-    stepDown(model, server, request.term);
-  if (server.term == request.term) {
-    server.state = 'follower';
-    server.electionAlarm = makeElectionAlarm(model);
-    if (request.prevLogIndex == 0 ||
-        (request.prevIndex <= server.log.len() &&
-         server.log.term(request.prevIndex) == request.prevTerm)) {
-      success = true;
-      var index = 0;
-      for (var i = 0; i < request.entries.length; i += 1) {
-        index = request.prevIndex + 1 + i;
-        if (server.log.term(index) != request.entries[i].term) {
-          server.log.truncatePast(index - 1);
-          server.log.append(request.entries[i]);
-        }
-      }
-      matchIndex = index;
-      server.commitIndex = request.commitIndex;
-    }
-  }
-  sendReply(model, request, {
-    term: server.term,
-    success: success,
-    matchIndex: matchIndex,
-  });
-};*/
-
-/*var handleAppendEntriesReply = function(model, server, reply) {
-  if (server.term < reply.term)
-    stepDown(reply.term);
-  if (server.state == 'leader' &&
-      server.term == reply.term) {
-    if (reply.successs) {
-      server.matchIndex[reply.from] = reply.matchIndex;
-      server.nextIndex[reply.from] += 1;
-    } else {
-      server.nextIndex[reply.from] = Math.max(1, server.nextIndex[reply.from] - 1);
-    }
-  }
-}*/
-
-/*var handleMessage = function(model, server, message) {
-  if (message.type == 'RequestVote') {
-    if (message.direction == 'request')
-      handleRequestVoteRequest(model, server, message);
-    else
-      handleRequestVoteReply(model, server, message);
-  } else if (message.type == 'AppendEntries') {
-    if (message.direction == 'request')
-      handleAppendEntriesRequest(model, server, message);
-    else
-      handleAppendEntriesReply(model, server, message);
-  }
-};*/
 
 (function() {
   for (var i = 1; i <= NUM_SERVERS; i += 1) {
@@ -373,26 +214,57 @@ renderMessages = function() {
   util.reparseSVG();
 };
 
+/* Functions to parse protocol hashmap */
+
+//note: rounds in protocol are zero-indexed, but not when called in executeRound
+msgsInRound = function(roundNumber){
+  messages = [];
+  round_events = protocol[roundNumber];
+  for(i = 0; i<round_events.length; i++){
+    msg = []; 
+    if ((round_events[i].substring(0,4))===("send")){ //if send event
+        msg.push(parseInt(round_events[i].charAt(5)));
+        msg.push(parseInt(round_events[i].charAt(10)));
+        messages.push(msg);
+      }
+    }
+  return messages;
+}
+
+/* Functions to execute protocol*/
+executeRound = function(model, roundNo){
+  if (roundNo == 1 || model.time >= (roundNo-1) * 10000){
+  //below is all msgs sent simultaneously within the round:
+  var msgs = msgsInRound(roundNo-1); //temp is the messages exchanged in a single round
+  var server = (model.servers)[0]; //server var may not be necessary if term/lastLogTerm/lastLogIndex is unnecessary
+  for(i = 0; i < msgs.length; i++){
+    var fromId = (msgs[i])[0];
+    var toId = (msgs[i])[1];
+    sendMessage(model, {
+        from: fromId, //server.id,
+        to: toId, //server.id + 1,
+        type: 'RequestVote',
+        term: server.term,
+        lastLogTerm: server.log.term(server.log.len()),
+        lastLogIndex: server.log.len()});
+  }
+}
+}
+
+executeProtocol = function(model) {
+  var protocol_keys = Object.keys(protocol);
+  protocol_keys.forEach(
+    function(round){
+      executeRound(model, parseInt(round) + 1);
+    }
+  );
+}
+
+
 setInterval(function() {
     model.time += 100
 
-    //to send to a single node:
-    /*
-    var original = model.servers
-    var sender_servers = []
-    sender_servers.push(original[0])
-    model.servers = sender_servers
-    */
-
-    model.servers.forEach(function(server) {
-      sendMessage(model, {
-      from: server.id,
-      to: server.id + 1,
-      type: 'RequestVote',
-      term: server.term,
-      lastLogTerm: server.log.term(server.log.len()),
-      lastLogIndex: server.log.len()});
-    });
+    executeProtocol(model)
 
   renderServers();
   renderMessages();
