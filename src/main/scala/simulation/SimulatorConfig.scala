@@ -5,6 +5,7 @@ import protocol.{NodeBehavior, NodeContext}
 import scala.collection.mutable
 
 sealed trait InitializerSelectionPolicy
+case class DeterministicInitializer(nodeIds: Seq[Int]) extends InitializerSelectionPolicy
 case class RandomInitializer(nodes: Int) extends InitializerSelectionPolicy
 case class RandomHonestInitializer(nodes: Int) extends InitializerSelectionPolicy
 case class RandomCorruptInitializer(nodes: Int) extends InitializerSelectionPolicy
@@ -52,20 +53,21 @@ object Config {
       this
     }
 
-    def build: (ProtocolConfig, SimulatorConfig) = (ProtocolConfig(numRounds, initValue), SimulatorConfig(numHonestNodes, numMaxCorruptNodes, corruptNodes.toSeq, isp))
+    def build: (ProtocolConfig, SimulatorConfig) = (ProtocolConfig(numHonestNodes  + corruptNodes.length, numMaxCorruptNodes, numRounds, initValue), SimulatorConfig(numHonestNodes, corruptNodes.toSeq, isp))
   }
 
   def builder = new Builder()
 }
 
 case class ProtocolConfig(
+  numNodes: Int,
+  numMaxCorruptNodes: Int,
   numRounds: Int,
   initValue: Any
 )
 
 case class SimulatorConfig(
   numHonestNodes: Int,
-  numMaxCorruptNodes: Int,
   corruptNodes: Seq[(AdversarialContext, NodeContext[Any, Any]) => NodeBehavior[Any, Any]],
   isp: InitializerSelectionPolicy
 )

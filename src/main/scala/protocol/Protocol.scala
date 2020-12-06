@@ -25,6 +25,7 @@ abstract class NodeBehavior[State, Output](val ctx: NodeContext[State, Output]) 
 
   final val config: ProtocolConfig = ctx.protConfig
 
+  final val numNodes: Int = config.numNodes
   final def round: Int = ctx.round
   final def state: State = ctx.state
   final def goto(newState: State): Unit = ctx.state = newState
@@ -46,6 +47,8 @@ abstract class Protocol[State, Output] extends Network {
   final type Behavior = NodeBehavior[State, Output]
   final type BehaviorGen = Context => Behavior
 
+  def senderValidityProp(initValue: Any, o1: Output): Boolean = initValue == o1
+  def consistent(o1: Output, o2: Output): Boolean = o1 == o2
   def initialState: State
   def behavior: BehaviorGen
 }

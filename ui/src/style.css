@@ -1,0 +1,32 @@
+.app-container {
+    padding-top: 50px;
+    overflow: hidden;
+}
+
+.canvas {
+    border: 0 solid black;
+}
+
+.message {
+    fill: #fc8d62;
+}
+
+.node-id {
+    font-size: 20pt;
+    text-anchor: middle;
+    dominant-baseline: central;
+    text-align: center;
+}
+
+.node {
+    fill: #8da0cb;
+    cursor: pointer;
+}
+
+.corrupt {
+    fill: #cd6460 !important;
+}
+
+.ring {
+    fill: #eeeeee;
+}

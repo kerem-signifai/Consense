@@ -1,3 +1,4 @@
+import codec.Codec
 import mpi.AuthenticatedMPI.SignedPayload
 import org.scalatest.matchers.must
 import org.scalatest.wordspec.AnyWordSpec
@@ -9,8 +10,8 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
 
   "A Dolev-Strong implementation" should {
     "reach consensus with all honest nodes" in {
-      val n = 10
-      val f = 3
+      val n = 4
+      val f = 1
       val config = Config.builder
         .withInitValue(true)
         .withMaxCorruptNodes(f)
@@ -19,24 +20,27 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
         .withInitPolicy(RandomHonestInitializer(1))
         .withInitValue(true)
       val result = new Simulation(config.build, DolevStrong).start()
+      println(Codec.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.trace))
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe true
+
     }
 
     "reach consensus in the presence of arbitrary number of failures (no-op malicious actors)" in {
-      val n = 10
-      val f = 3
+      val n = 4
+      val f = 1
       val config = Config.builder
         .withInitValue(true)
         .withMaxCorruptNodes(f)
         .withHonestNodes(n - f)
         .withRounds(f + 1)
-        .withInitPolicy(RandomCorruptInitializer(1))
+        .withInitPolicy(RandomHonestInitializer(1))
         .withInitValue(true)
       1 to f foreach { _ =>
         config.addCorruptNode { (_, ctx) => new NodeBehavior(ctx) {} }
       }
       val result = new Simulation(config.build, DolevStrong).start()
+      println(Codec.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.trace))
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe true
     }
@@ -46,8 +50,8 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
       // From round 1..f-1, the corrupt nodes propagate FALSE and create a message FALSE with a signature chain of length f
       // In round f-1, the corrupt nodes send FALSE with a chain of f malicious signatures to an honest node
       // In round f, the aforementioned honest node accepts the malicious message and arrives at an inconsistent state
-      val n = 10
-      val f = 3
+      val n = 7
+      val f = 2
       val config = Config.builder
         .withInitValue(null)
         .withMaxCorruptNodes(f)
@@ -77,6 +81,7 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
       val result = new Simulation(config.build, DolevStrong).start()
       result.honestSenderProposition mustBe true
       result.honestAgree mustBe false
+      println(Codec.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.trace))
     }
 
     "reach consensus with malicious actor in `f + 1` rounds (§3.4.1 FDCB)" in {
@@ -116,6 +121,7 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
       val result = new Simulation(config.build, DolevStrong).start()
       result.honestSenderProposition mustBe true
       result.honestAgree mustBe true
+      println(Codec.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.trace))
     }
   }
 }
