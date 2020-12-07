@@ -24,7 +24,7 @@ class Node extends Component {
                 trigger={
                     <g>
                         <circle key={id + '-node'} className={"node" + (corrupt ? " corrupt" : "")} cx={posX} cy={posY} r={NODE_R}/>
-                        {output ? <circle key={id + '-output'} cx={posX} cy={posY} r={NODE_R} stroke="green" strokeWidth="7" fill="none"/> : null}
+                        {(output != null) ? <circle key={id + '-output'} cx={posX} cy={posY} r={NODE_R} stroke="green" strokeWidth="7" fill="none"/> : null}
                     </g>
                 }
             >
@@ -87,6 +87,10 @@ export default class Simulation extends Component {
         terminatedNodes: [],
         nodeOutputs: {}
     }
+
+    componentWillUnmount = () => {
+      clearInterval(this.roundTimer);
+    };
 
     componentDidMount = () => {
         const {data} = this.props;
@@ -203,7 +207,7 @@ export default class Simulation extends Component {
         const {curMessages, nodes} = this.state;
 
         return (
-            <Container textAlign='center' className='app-container'>
+            <Container textAlign='center' className='sim-container'>
                 <h1>Round {this.state.round}</h1>
                 <svg width={1200} height={1000} className="canvas">
                     <circle className="ring" cx={RING_X} cy={RING_Y} r={RING_R}/>

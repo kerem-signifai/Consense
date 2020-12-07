@@ -9,17 +9,19 @@ class DLCSSpec extends AnyWordSpec with must.Matchers {
 
   "A weakly-valid DLCS implementation" should {
     "reach consensus in the presence of no failures" in {
-      val n = 15
+      val n = 5
       val f = 0
       val config = Config.builder
         .withMaxCorruptNodes(f)
         .withHonestNodes(n - f)
-        .withRounds(n)
+        .withRounds(n - 1)
         .withInitPolicy(DeterministicInitializer(Seq(1)))
-        .withInitValue(DLCSConfig(initValue = true, (1 to n map (i => i -> i)).toMap))
+        .withInitValue(DLCSConfig(initValue = true, (1 to n map (i => i -> (i + 1))).toMap))
       val result = new Simulation(config.build, DLCSConsensus).start()
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe true
+
+      SpecRecorder.record(result, "Deterministic Longest-Chain-Style", "Reaching consensus in the presence of no failures")
     }
 
     "reach weakly-valid consensus in the presence of malicious leaders" in {
@@ -28,7 +30,7 @@ class DLCSSpec extends AnyWordSpec with must.Matchers {
       val config = Config.builder
         .withMaxCorruptNodes(f)
         .withHonestNodes(n - f)
-        .withRounds(n)
+        .withRounds(n - 1)
         .withInitPolicy(DeterministicInitializer(Seq(1)))
         .withInitValue(DLCSConfig(initValue = false, Map(
           1 -> 4,
@@ -48,7 +50,7 @@ class DLCSSpec extends AnyWordSpec with must.Matchers {
         }
       }
       val result = new Simulation(config.build, DLCSConsensus).start()
-      println(Codec.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.trace))
+      SpecRecorder.record(result, "Deterministic Longest-Chain-Style", "Reaching weakly-valid consensus in the presence of a malicious leader")
 
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe false
@@ -75,7 +77,7 @@ class DLCSSpec extends AnyWordSpec with must.Matchers {
         }
       }
       val result = new Simulation(config.build, StrongDLCSConsensus).start()
-      println(Codec.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.trace))
+      SpecRecorder.record(result, "Strongly-Consistent Deterministic Longest-Chain-Style", "Reaching strongly-valid consensus in the presence of a malicious leader")
 
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe true
@@ -100,6 +102,8 @@ class DLCSSpec extends AnyWordSpec with must.Matchers {
         }
       }
       val result = new Simulation(config.build, StrongDLCSConsensus).start()
+      SpecRecorder.record(result, "Strongly-Consistent Deterministic Longest-Chain-Style", "Susceptibility to same attack as Dolev-Strong when run for less than f + 1 rounds")
+
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe false
     }

@@ -125,6 +125,8 @@ class StreamletSpec extends AnyWordSpec with must.Matchers {
         .withInitPolicy(RandomHonestInitializer(1))
         .withInitValue(init)
       val result = new Simulation(config.build, Streamlet).start()
+      SpecRecorder.record(result, "Streamlet", "Have consistent blockchains in the presence of no failures")
+
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe true
     }
@@ -146,6 +148,8 @@ class StreamletSpec extends AnyWordSpec with must.Matchers {
         .withInitPolicy(RandomHonestInitializer(1))
         .withInitValue(init)
       val result = new Simulation(config.build, Streamlet).start()
+      SpecRecorder.record(result, "Streamlet", "Have consistent yet shorter blockchains in the presence of no failures and without extra buffer epochs")
+
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe true
     }
@@ -174,6 +178,8 @@ class StreamletSpec extends AnyWordSpec with must.Matchers {
         }
       }
       val result = new Simulation(config.build, Streamlet).start()
+      SpecRecorder.record(result, "Streamlet", "Have consistent blockchains in the presence of crash failures")
+
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe true
       //      println(Codec.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.trace))
@@ -196,9 +202,19 @@ class StreamletSpec extends AnyWordSpec with must.Matchers {
         .withInitPolicy(RandomHonestInitializer(1))
         .withInitValue(init)
       1 to f foreach { _ =>
-        config.addCorruptNode { (_, ctx) => new NodeBehavior(ctx) {} }
+        config.addCorruptNode { (_, ctx) =>
+          new NodeBehavior(ctx) {
+            private final val genesisBlock = Block("genesis", 0, Seq.empty)
+            private def sha256(str: String) = String.format("%032x", new BigInteger(1, MessageDigest.getInstance("SHA-256").digest(str.getBytes("UTF-8"))))
+            override def afterRound(): Unit = {
+              broadcast(Block(sha256(genesisBlock.toString), (round + 1) / 2, Seq()))
+            }
+          }
+        }
       }
       val result = new Simulation(config.build, Streamlet).start()
+      SpecRecorder.record(result, "Streamlet", "Have consistent blockchains in the presence of less than n/3 malicious failures")
+
       result.honestAgree mustBe true
       result.honestSenderProposition mustBe true
     }
@@ -247,7 +263,7 @@ class StreamletSpec extends AnyWordSpec with must.Matchers {
         }
       }
       val result = new Simulation(config.build, EarlyFinalizedStreamlet).start()
-      println(Codec.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.trace))
+      SpecRecorder.record(result, "Streamlet", "Have inconsistent blockchains when finalization constraint is weakened")
 
       result.honestAgree mustBe false
       result.honestSenderProposition mustBe false

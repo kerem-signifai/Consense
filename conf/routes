@@ -1,0 +1,3 @@
+GET           /api/results               controllers.FrontendController.listSimulations()
+GET           /                          controllers.FrontendController.index()
+GET           /*file                     controllers.FrontendController.assetOrDefault(file)

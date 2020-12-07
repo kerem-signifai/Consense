@@ -1,5 +1,9 @@
 .app-container {
     padding-top: 50px;
+}
+
+.sim-container {
+    padding-top: 50px;
     overflow: hidden;
 }
 

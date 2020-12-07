@@ -1,0 +1,7 @@
+version: '3'
+
+services:
+  web:
+    image: consense:latest
+    ports:
+      - '8080:8080'
