@@ -107,7 +107,7 @@ class Simulation[State, Output](config: (ProtocolConfig, SimulatorConfig), proto
       val hasTerminated = init.ctx.terminated
       val hasOutput = init.ctx.output.isDefined
       val oldState = init.ctx.state
-      init.init()
+      init.initialize()
       before ++= enqueueMessages(init)
       if (init.ctx.state != oldState) {
         after += StateChangedAction(init.ctx.nodeId, init.ctx.state)
@@ -149,7 +149,7 @@ class Simulation[State, Output](config: (ProtocolConfig, SimulatorConfig), proto
         hasOutput(node.ctx.nodeId) = node.ctx.output.isDefined
         oldState(node.ctx.nodeId) = node.ctx.state
         ingress.removeAll() foreach { case (sender, msg) =>
-          node.receive(protocol.mpi.read(msg, sender), sender)
+          node.receive.applyOrElse(protocol.mpi.read(msg, sender) -> sender, { _: Any => () })
         }
       }
 

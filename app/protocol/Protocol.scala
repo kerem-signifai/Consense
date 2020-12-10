@@ -37,9 +37,37 @@ abstract class NodeBehavior[State, Output](val ctx: NodeContext[State, Output]) 
   final def output(result: Output): Unit = ctx.output = Some(result)
 
   def receive: Receive = _ => {}
-  def init(): Unit = {}
+  def initialize(): Unit = {}
   def beforeRound(): Unit = {}
   def afterRound(): Unit = {}
+}
+
+abstract class BehaviorBuilder[State, Output](ctx: NodeContext[State, Output]) extends NodeBehavior[State, Output](ctx) {
+  private val beforeActions = mutable.Map[Int, mutable.Buffer[Int => ()]]()
+  private val afterActions = mutable.Map[Int, mutable.Buffer[Int => ()]]()
+  private val initActions = mutable.Buffer[Unit => ()]()
+  private val messageHandlers = mutable.Buffer[Receive]()
+
+  class OperationBuilder(target: mutable.Map[Int, mutable.Buffer[Int => ()]], round: Int) {
+    def perform(op: Int => Unit): Unit = {
+      target.getOrElseUpdate(round, mutable.Buffer()) += op
+    }
+  }
+
+  class RoundBuilder(target: mutable.Map[Int, mutable.Buffer[Int => ()]]) {
+    def round(num: Int): OperationBuilder = new OperationBuilder(target, num)
+  }
+  def before: RoundBuilder = new RoundBuilder(beforeActions)
+  def after: RoundBuilder = new RoundBuilder(afterActions)
+  def recv(receive: Receive): Unit = messageHandlers += receive
+  def init(fx: Unit => ()): Unit = initActions += fx
+
+  override def beforeRound(): Unit = beforeActions.getOrElse(round, Seq.empty).foreach(_(round))
+  override def afterRound(): Unit = afterActions.getOrElse(round, Seq.empty).foreach(_(round))
+  override def initialize(): Unit = initActions.foreach(_())
+  override def receive: Receive = { case (msg, sender) =>
+    messageHandlers.filter(_.isDefinedAt(msg, sender)).foreach(_(msg, sender))
+  }
 }
 
 abstract class Protocol[State, Output] extends Network {

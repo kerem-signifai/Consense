@@ -61,7 +61,7 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
       1 to f foreach { _ =>
         config.addCorruptNode { (advCtx, nCtx) =>
           new NodeBehavior(nCtx) {
-            override def init(): Unit = {
+            override def initialize(): Unit = {
               advCtx.discovery.honestNodes foreach { send(true, _) }
               advCtx.discovery.corruptNodes foreach { send(false, _) }
             }
@@ -103,7 +103,7 @@ class DolevStrongSpec extends AnyWordSpec with must.Matchers {
       1 to f foreach { _ =>
         config.addCorruptNode { (advCtx, nCtx) =>
           new NodeBehavior(nCtx) {
-            override def init(): Unit = {
+            override def initialize(): Unit = {
               advCtx.discovery.honestNodes foreach { send(true, _) }
               advCtx.discovery.corruptNodes foreach { send(false, _) }
             }

@@ -13,7 +13,7 @@ object DLCSConsensus extends Protocol[DLCSState, Boolean] with AuthenticatedNetw
   override def senderValidityProp(initValue: Any, o1: Boolean): Boolean = initValue.asInstanceOf[DLCSConfig].initValue == o1
 
   override def behavior: BehaviorGen = ctx => new NodeBehavior(ctx) {
-    override def init(): Unit = {
+    override def initialize(): Unit = {
       val msg = DLCSMessage(config.initValue.asInstanceOf[DLCSConfig].initValue, 0)
       broadcast(msg)
       goto(state.copy(hasSent = true, votes = Seq(msg)))

@@ -15,7 +15,7 @@ object OralMessages extends Protocol[OMState, Boolean] {
   override def initialState: OMState = OMState(Map.empty, curValue = false)
   override def behavior: BehaviorGen = ctx => new NodeBehavior(ctx) {
 
-    override def init(): Unit = {
+    override def initialize(): Unit = {
       val dests = 1 to config.numNodes filterNot(ctx.nodeId ==)
       val exec = OMExecution(-1, dests.size, Map.empty, 2 * (config.numMaxCorruptNodes + 1), config.numMaxCorruptNodes)
       goto(state.copy(execs = state.execs.updated(Seq(ctx.nodeId), exec)))

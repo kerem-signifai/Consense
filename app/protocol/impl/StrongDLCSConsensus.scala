@@ -11,7 +11,7 @@ object StrongDLCSConsensus extends Protocol[StrongDLCSState, Boolean] with Authe
   override def initialState: StrongDLCSState = StrongDLCSState(Seq.empty, hasSent = false, value = false)
 
   override def behavior: BehaviorGen = ctx => new NodeBehavior(ctx) {
-    override def init(): Unit = {
+    override def initialize(): Unit = {
       goto(state.copy(value = config.initValue.asInstanceOf[Boolean]))
       if (state.value) {
         broadcast(true)
@@ -29,6 +29,7 @@ object StrongDLCSConsensus extends Protocol[StrongDLCSState, Boolean] with Authe
       if (state.value && !state.hasSent) {
         broadcast(state.value)
         state.votes.foreach(m => broadcast(m.wrapper))
+        goto(state.copy(hasSent = true))
       }
       if (!state.value) {
         if (state.votes.flatMap(_.sigChain).toSet.size >= round) {
