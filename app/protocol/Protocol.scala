@@ -64,7 +64,7 @@ abstract class BehaviorBuilder[State, Output](ctx: NodeContext[State, Output]) e
 
   override def beforeRound(): Unit = beforeActions.getOrElse(round, Seq.empty).foreach(_(round))
   override def afterRound(): Unit = afterActions.getOrElse(round, Seq.empty).foreach(_(round))
-  override def initialize(): Unit = initActions.foreach(_())
+  override def initialize(): Unit = initActions.foreach(_(()))
   override def receive: Receive = { case (msg, sender) =>
     messageHandlers.filter(_.isDefinedAt(msg, sender)).foreach(_(msg, sender))
   }

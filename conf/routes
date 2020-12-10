@@ -1,3 +1,4 @@
 GET           /api/results               controllers.FrontendController.listSimulations()
+POST          /api/simulate              controllers.FrontendController.simulate()
 GET           /                          controllers.FrontendController.index()
 GET           /*file                     controllers.FrontendController.assetOrDefault(file)

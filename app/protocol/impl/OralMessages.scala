@@ -16,10 +16,11 @@ object OralMessages extends Protocol[OMState, Boolean] {
   override def behavior: BehaviorGen = ctx => new NodeBehavior(ctx) {
 
     override def initialize(): Unit = {
+      val initValue = config.initValue.asInstanceOf[Boolean]
       val dests = 1 to config.numNodes filterNot(ctx.nodeId ==)
-      val exec = OMExecution(-1, dests.size, Map.empty, 2 * (config.numMaxCorruptNodes + 1), config.numMaxCorruptNodes)
+      val exec = OMExecution(-1, dests.size, Map(ctx.nodeId -> initValue), 2 * (config.numMaxCorruptNodes + 1), config.numMaxCorruptNodes)
       goto(state.copy(execs = state.execs.updated(Seq(ctx.nodeId), exec)))
-      dests foreach { send(OMReq(config.initValue.asInstanceOf[Boolean], config.numMaxCorruptNodes, Seq(ctx.nodeId)), _) }
+      dests foreach { send(OMReq(initValue, config.numMaxCorruptNodes, Seq(ctx.nodeId)), _) }
     }
 
     override def afterRound(): Unit = {
@@ -59,7 +60,7 @@ object OralMessages extends Protocol[OMState, Boolean] {
         } else {
           val newPath = path :+ ctx.nodeId
           val dests = 1 to config.numNodes diff newPath
-          val exec = OMExecution(sender, dests.size, Map.empty, round + 2 * m, m - 1)
+          val exec = OMExecution(sender, dests.size, Map(ctx.nodeId -> v), round + 2 * m, m - 1)
           goto(state.copy(execs = state.execs.updated(newPath, exec)))
           dests foreach { send(OMReq(v, m - 1, newPath), _) }
         }
