@@ -30,7 +30,9 @@ To build a standalone executable for Consense, run `sbt stage` in the project. S
 # Running Consense
 
 ## With Docker Compose
-A `docker-compose.yml` file exists in the root directory. If Docker Compose is installed, the Consense webapp can be started with `docker-compose up`. This will start and expose the webapp on port 8080.
+A `docker-compose.yml` file exists in the root directory. If Docker Compose is installed, the Consense webapp can be started with `docker-compose up`. 
 
 ## With Startup Script
 The `target/universal/stage/bin/consense` script can be used to start the webapp after it has been fully staged with `sbt stage`.
+
+Both of the above running methods will start and expose the webapp on port 8080. An API exists to simulate single-shot consensus and its use is demonstrated in the `simulate.ipynb` notebook.
