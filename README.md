@@ -19,6 +19,9 @@ Distributed consensus simulation and visualization framework.
 * [yarn](https://classic.yarnpkg.com/en/docs/install)
 * [Docker](https://docs.docker.com/get-docker/) (if building and running the Consense image)
 
+## Tests
+Some simulations come bundled with the Consense source code. These can be simulated using `sbt run` to invoke ScalaTests.
+
 ## Installation
 
 ### Docker Image
